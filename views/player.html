@@ -60,7 +60,7 @@
 
         // Define a fonte do vídeo
         player.src({
-          src: `/hls-proxy?url=${encodeURIComponent(streamingUrl)}`,
+          src: `/hls-proxy?url=${streamingUrl}`,
           type: "application/x-mpegURL",
         });
 
