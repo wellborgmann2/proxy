@@ -68,16 +68,7 @@ app.get("/proxy", async (req, res) => {
   request.end();
 });
 
-axiosRetry(axios, {
-  retries: 5, // Número máximo de tentativas
-  retryDelay: (retryCount) => Math.pow(2, retryCount) * 1000, // Backoff exponencial
-  retryCondition: (error) => {
-    return error.response?.status >= 500 || error.code === "ECONNABORTED";
-  },
-});
-import express from "express";
-import axios from "axios";
-import axiosRetry from "axios-retry";
+
 
 
 
