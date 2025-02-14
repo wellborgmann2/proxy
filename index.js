@@ -58,7 +58,6 @@ app.get("/proxy", async (req, res) => {
   request.end();
 });
 
-// ✅ Nova rota para streaming HLS (m3u8, ts)
 app.get("/hls-proxy", async (req, res) => {
   const targetUrl = req.query.url;
 
@@ -87,13 +86,21 @@ app.get("/hls-proxy", async (req, res) => {
 
   const request = client.get(targetUrl, { headers }, (response) => {
     if (!res.headersSent) {
-      const contentType = response.headers["content-type"];
+      let contentType = response.headers["content-type"];
+
+      // 🔹 Define o tipo correto para HLS (m3u8 e ts)
+      if (targetUrl.includes(".m3u8")) {
+        contentType = "application/vnd.apple.mpegurl";
+      } else if (targetUrl.includes(".ts")) {
+        contentType = "video/mp2t";
+      }
+
       res.writeHead(response.statusCode, {
         ...response.headers,
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Origin, Range, Accept-Encoding",
-        "Content-Type": contentType || "application/vnd.apple.mpegurl",
+        "Content-Type": contentType,
       });
     }
 
