@@ -7,12 +7,22 @@ import axiosRetry from "axios-retry";
 import cors from "cors";
 app.use(cors());
 // Proxy para vídeos MP4
+import { fileURLToPath } from 'url';
+import path, { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "https://tv-kohl-three.vercel.app");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
+});
+
+app.get("/player", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "player.html"));
 });
 
 app.get("/proxy", async (req, res) => {
