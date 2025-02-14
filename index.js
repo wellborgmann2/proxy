@@ -12,26 +12,39 @@ export default function handler(req, res) {
     const targetUrl = decodeURIComponent(url);
     const client = targetUrl.startsWith("https") ? https : http;
 
-    // Repassa todos os cabeçalhos originais do cliente
+    // Replicando todos os cabeçalhos do cliente
     const headers = { ...req.headers };
 
-    // Adiciona cabeçalhos essenciais para evitar bloqueios
+    // Adicionando cabeçalhos essenciais
     headers["User-Agent"] = headers["user-agent"] || "Mozilla/5.0";
     headers["Referer"] = targetUrl;
+    
+    // Mantendo o cabeçalho `Range` se presente
+    if (req.headers.range) {
+      headers["Range"] = req.headers.range;
+    }
 
     // Configuração da requisição para o servidor de origem
     const options = { headers };
 
     const request = client.get(targetUrl, options, (response) => {
-      // Remove `Transfer-Encoding: chunked` para evitar problemas de buffering
+      // Verifica se a resposta é parcial (206 - Partial Content)
+      if (response.statusCode === 206) {
+        res.statusCode = 206;
+      }
+
+      // Remove `Transfer-Encoding: chunked` para evitar buffering
       if (response.headers["transfer-encoding"] === "chunked") {
         delete response.headers["transfer-encoding"];
       }
 
-      // Envia os cabeçalhos originais para o cliente
-      res.writeHead(response.statusCode, response.headers);
+      // Repassando cabeçalhos importantes
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Range");
 
-      // Transmite os dados para o cliente
+      // Envia os cabeçalhos e os dados para o cliente
+      res.writeHead(response.statusCode, response.headers);
       response.pipe(res);
     });
 
