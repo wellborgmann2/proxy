@@ -16,8 +16,17 @@ app.use(cors());
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "https://tv-kohl-three.vercel.app");
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Range");
   next();
+});
+
+app.options("/hls-proxy", (req, res) => {
+  res.set({
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, Range",
+  });
+  res.sendStatus(200);
 });
 
 app.get("/player", (req, res) => {
@@ -38,8 +47,7 @@ app.get("/proxy", async (req, res) => {
   }
 
   const headers = {
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
   };
 
   if (req.headers.range) {
