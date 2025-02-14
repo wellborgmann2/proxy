@@ -67,10 +67,11 @@
         });
 
         // Define a fonte do vídeo
-        player.src({
-          src: `https://proxy-gold-pi.vercel.app/hls-proxy?url=${streamingUrl}`,
-          type: "application/x-mpegURL",
-        });
+       player.src({
+  src: `https://seu-servidor.com/hls-proxy?url=${encodeURIComponent(streamingUrl)}`,
+  type: "application/x-mpegURL",
+});
+
 
         player.on("error", function (e) {
           console.error("Erro ao carregar o vídeo: ", e);
