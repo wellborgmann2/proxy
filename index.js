@@ -9,16 +9,19 @@ export default function handler(req, res) {
   }
 
   try {
-    const client = url.startsWith("https") ? https : http;
-    
-    client.get(url, (response) => {
-      res.setHeader("Content-Type", response.headers["content-type"] || "application/octet-stream");
-      res.setHeader("Cache-Control", "public, max-age=3600");
+    const targetUrl = decodeURIComponent(url); // Decodifica a URL corretamente
+    const client = targetUrl.startsWith("https") ? https : http;
 
+    const request = client.get(targetUrl, (response) => {
+      res.writeHead(response.statusCode, response.headers);
       response.pipe(res);
-    }).on("error", (err) => {
-      res.status(500).json({ error: "Erro ao buscar o conteúdo" });
     });
+
+    request.on("error", (err) => {
+      res.status(500).json({ error: "Erro ao buscar o conteúdo", details: err.message });
+    });
+
+    request.end();
 
   } catch (error) {
     res.status(500).json({ error: "Erro interno do servidor" });
