@@ -27,10 +27,16 @@
         border-radius: 5px;
         margin-bottom: 20px;
       }
+      #loading {
+        display: none;
+        font-size: 1.5em;
+        color: #007bff;
+      }
     </style>
   </head>
   <body>
     <nav><div class="back" onclick="window.history.back()">Voltar</div></nav>
+    <div id="loading">Carregando vídeo...</div>
     <video
       id="my-video"
       class="video-js vjs-default-skin"
@@ -50,26 +56,33 @@
           return;
         }
 
-     var player = videojs('my-video', {
-  techOrder: ['html5'],
-  vhs: {
-    withCredentials: false,  // Para habilitar ou desabilitar cookies no HLS
-    enableLowLatency: true,   // Habilitar baixa latência (opcional)
-    maxRetry: 3,             // Número de tentativas de reconexão
-    retryDelay: 5000         // Intervalo entre as tentativas
-  }
-});
-
+        var player = videojs('my-video', {
+          techOrder: ['html5'],
+          hls: {
+            withCredentials: false,  // Para habilitar ou desabilitar cookies no HLS
+            enableLowLatency: true,   // Habilitar baixa latência (opcional)
+            maxRetry: 3,             // Número de tentativas de reconexão
+            retryDelay: 5000         // Intervalo entre as tentativas
+          }
+        });
 
         // Define a fonte do vídeo
         player.src({
-          src: `/hls-proxy?url=${streamingUrl}`,
+          src: `https://proxy-gold-pi.vercel.app/hls-proxy?url=${streamingUrl}`,
           type: "application/x-mpegURL",
         });
 
-        player.on("error", function () {
-          console.error("Erro ao carregar o vídeo.");
+        player.on("error", function (e) {
+          console.error("Erro ao carregar o vídeo: ", e);
           alert("Ocorreu um erro ao carregar o vídeo.");
+        });
+
+        player.on("waiting", function () {
+          document.getElementById("loading").style.display = "block";
+        });
+
+        player.on("play", function () {
+          document.getElementById("loading").style.display = "none";
         });
 
         player.on("loadedmetadata", function () {
