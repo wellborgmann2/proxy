@@ -106,10 +106,11 @@ app.get("/hls-proxy", async (req, res) => {
     const response = await axios.get(videoUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-        "Origin": "https://proxy-gold-pi.vercel.app",
-        "Referer": "https://proxy-gold-pi.vercel.app",
+        "Origin": req.headers.origin || "https://proxy-gold-pi.vercel.app",
+        "Referer": req.headers.referer || "https://proxy-gold-pi.vercel.app",
       },
       responseType: "stream",
+      maxRedirects: 5, // Seguir redirecionamentos
     });
 
     res.set({
@@ -129,6 +130,7 @@ app.get("/hls-proxy", async (req, res) => {
     }
   }
 });
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
