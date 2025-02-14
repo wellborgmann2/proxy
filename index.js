@@ -4,7 +4,17 @@ import express from "express";
 import axios from "axios";
 const app = express();
 import axiosRetry from "axios-retry";
+import cors from "cors";
+app.use(cors());
 // Proxy para vídeos MP4
+
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://tv-kohl-three.vercel.app");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
+
 app.get("/proxy", async (req, res) => {
   const targetUrl = req.query.url;
 
@@ -59,13 +69,12 @@ app.get("/proxy", async (req, res) => {
 });
 
 axiosRetry(axios, {
-  retries: 5, // Número de tentativas antes de desistir
-  retryDelay: (retryCount) => Math.pow(2, retryCount) * 1000, // Exponential Backoff
+  retries: 5, // Número máximo de tentativas
+  retryDelay: (retryCount) => Math.pow(2, retryCount) * 1000, // Backoff exponencial
   retryCondition: (error) => {
     return error.response?.status >= 500 || error.code === "ECONNABORTED";
   },
 });
-
 app.get("/hls-proxy", async (req, res) => {
   const videoUrl = req.query.url;
 
