@@ -1,62 +1,63 @@
 import pkg from "follow-redirects";
 const { http, https } = pkg;
+import express from "express";
 
-export default function handler(req, res) {
-  const { url } = req.query;
+const app = express();
 
-  if (!url) {
-    return res.status(400).json({ error: "URL não especificada" });
+app.get("/proxy", async (req, res) => {
+  const targetUrl = req.query.url;
+
+  if (!targetUrl) {
+    return res.status(400).json({ error: "URL is required" });
   }
 
   try {
-    const targetUrl = decodeURIComponent(url);
-    const client = targetUrl.startsWith("https") ? https : http;
+    new URL(targetUrl); // Verifica se a URL é válida
+  } catch (err) {
+    return res.status(400).json({ error: "Invalid URL" });
+  }
 
-    // Replicando todos os cabeçalhos do cliente
-    const headers = { ...req.headers };
+  const headers = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+  };
 
-    // Adicionando cabeçalhos essenciais
-    headers["User-Agent"] = headers["user-agent"] || "Mozilla/5.0";
-    headers["Referer"] = targetUrl;
-    
-    // Mantendo o cabeçalho `Range` se presente
-    if (req.headers.range) {
-      headers["Range"] = req.headers.range;
+  // Adiciona suporte ao cabeçalho Range
+  if (req.headers.range) {
+    headers["Range"] = req.headers.range;
+  }
+
+  const client = targetUrl.startsWith("https") ? https : http;
+
+  const request = client.get(targetUrl, { headers }, (response) => {
+    if (!res.headersSent) {
+      // Ajusta os cabeçalhos corretamente
+      res.writeHead(response.statusCode, {
+        ...response.headers,
+        "Accept-Ranges": "bytes", // Permite requests parciais
+        "Content-Type": response.headers["content-type"] || "video/mp4",
+      });
     }
 
-    // Configuração da requisição para o servidor de origem
-    const options = { headers };
+    // Transmite os dados diretamente para o cliente
+    response.pipe(res);
 
-    const request = client.get(targetUrl, options, (response) => {
-      // Verifica se a resposta é parcial (206 - Partial Content)
-      if (response.statusCode === 206) {
-        res.statusCode = 206;
+    response.on("error", (err) => {
+      console.error("Stream error:", err.message);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Error streaming content" });
       }
-
-      // Remove `Transfer-Encoding: chunked` para evitar buffering
-      if (response.headers["transfer-encoding"] === "chunked") {
-        delete response.headers["transfer-encoding"];
-      }
-
-      // Repassando cabeçalhos importantes
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Range");
-
-      // Envia os cabeçalhos e os dados para o cliente
-      res.writeHead(response.statusCode, response.headers);
-      response.pipe(res);
     });
+  });
 
-    request.on("error", (err) => {
-      console.error("Erro ao buscar o conteúdo:", err.message);
-      res.status(500).json({ error: "Erro ao buscar o conteúdo", details: err.message });
-    });
+  request.on("error", (err) => {
+    console.error("Error fetching content:", err.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Error fetching content" });
+    }
+  });
 
-    request.end();
+  request.end();
+});
 
-  } catch (error) {
-    console.error("Erro interno do servidor:", error.message);
-    res.status(500).json({ error: "Erro interno do servidor" });
-  }
-}
+export default app;
