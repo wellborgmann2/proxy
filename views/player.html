@@ -50,13 +50,16 @@
           return;
         }
 
-        const player = videojs("my-video", {
-          controls: true,
-          preload: "auto",
-          html5: {
-            hls: { withCredentials: false }
-          }
-        });
+     var player = videojs('my-video', {
+  techOrder: ['html5'],
+  vhs: {
+    withCredentials: false,  // Para habilitar ou desabilitar cookies no HLS
+    enableLowLatency: true,   // Habilitar baixa latência (opcional)
+    maxRetry: 3,             // Número de tentativas de reconexão
+    retryDelay: 5000         // Intervalo entre as tentativas
+  }
+});
+
 
         // Define a fonte do vídeo
         player.src({
