@@ -20,7 +20,7 @@
   "stream": "0.0.2",
   "util": "^0.12.5",
   "cors": "^2.8.5",
-  "follow-redirects": "^1.15.0"
+  "follow-redirects": "^11.0.0"
 }
 
 }
