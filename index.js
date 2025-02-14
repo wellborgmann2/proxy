@@ -3,7 +3,7 @@ const { http, https } = pkg;
 import express from "express";
 import axios from "axios";
 const app = express();
-
+import axiosRetry from "axios-retry";
 // Proxy para vídeos MP4
 app.get("/proxy", async (req, res) => {
   const targetUrl = req.query.url;
@@ -58,6 +58,14 @@ app.get("/proxy", async (req, res) => {
   request.end();
 });
 
+axiosRetry(axios, {
+  retries: 5, // Número de tentativas antes de desistir
+  retryDelay: (retryCount) => Math.pow(2, retryCount) * 1000, // Exponential Backoff
+  retryCondition: (error) => {
+    return error.response?.status >= 500 || error.code === "ECONNABORTED";
+  },
+});
+
 app.get("/hls-proxy", async (req, res) => {
   const videoUrl = req.query.url;
 
@@ -66,6 +74,8 @@ app.get("/hls-proxy", async (req, res) => {
   }
 
   try {
+    console.log(`🔄 Buscando stream: ${videoUrl}`);
+
     const response = await axios.get(videoUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
@@ -83,9 +93,15 @@ app.get("/hls-proxy", async (req, res) => {
 
     response.data.pipe(res);
   } catch (error) {
-    console.error("Erro ao buscar o streaming:", error.message);
-    res.status(500).send("Erro ao carregar o vídeo.");
+    console.error("❌ Erro ao buscar streaming:", error.message);
+
+    if (error.response) {
+      res.status(error.response.status).send(`Erro ${error.response.status}: ${error.response.statusText}`);
+    } else {
+      res.status(500).send("Erro desconhecido ao carregar o vídeo.");
+    }
   }
 });
+
 
 export default app;
