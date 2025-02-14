@@ -79,7 +79,7 @@ import express from "express";
 import axios from "axios";
 import axiosRetry from "axios-retry";
 
-const app = express();
+
 
 // Configura retries automáticos
 axiosRetry(axios, {
