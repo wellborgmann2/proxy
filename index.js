@@ -9,10 +9,18 @@ export default function handler(req, res) {
   }
 
   try {
-    const targetUrl = decodeURIComponent(url); // Decodifica a URL corretamente
+    const targetUrl = decodeURIComponent(url);
     const client = targetUrl.startsWith("https") ? https : http;
 
-    const request = client.get(targetUrl, (response) => {
+    const options = {
+      headers: {
+        "User-Agent": req.headers["user-agent"] || "Mozilla/5.0",
+        "Referer": targetUrl, // Pode ser necessário para evitar bloqueios
+        "Range": req.headers["range"] || "bytes=0-" // Repassa a requisição parcial
+      },
+    };
+
+    const request = client.get(targetUrl, options, (response) => {
       res.writeHead(response.statusCode, response.headers);
       response.pipe(res);
     });
