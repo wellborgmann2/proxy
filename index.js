@@ -75,6 +75,21 @@ axiosRetry(axios, {
     return error.response?.status >= 500 || error.code === "ECONNABORTED";
   },
 });
+import express from "express";
+import axios from "axios";
+import axiosRetry from "axios-retry";
+
+const app = express();
+
+// Configura retries automáticos
+axiosRetry(axios, {
+  retries: 10, // Número de tentativas antes de desistir
+  retryDelay: (retryCount) => Math.pow(2, retryCount) * 1000, // Exponential Backoff
+  retryCondition: (error) => {
+    return error.response?.status >= 500 || error.code === "ECONNABORTED";
+  },
+});
+
 app.get("/hls-proxy", async (req, res) => {
   const videoUrl = req.query.url;
 
@@ -110,6 +125,11 @@ app.get("/hls-proxy", async (req, res) => {
       res.status(500).send("Erro desconhecido ao carregar o vídeo.");
     }
   }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Proxy rodando na porta ${PORT}`);
 });
 
 
