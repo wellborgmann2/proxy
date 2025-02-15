@@ -14,12 +14,13 @@ const __dirname = dirname(__filename);
 app.use(cors());
 
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://tv-kohl-three.vercel.app");
+  res.header("Access-Control-Allow-Origin", "*"); // Permite requisições de qualquer origem
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Range");
   next();
 });
 
+// Permite requisições OPTIONS para evitar bloqueios de CORS
 app.options("/hls-proxy", (req, res) => {
   res.set({
     "Access-Control-Allow-Origin": "*",
@@ -29,10 +30,12 @@ app.options("/hls-proxy", (req, res) => {
   res.sendStatus(200);
 });
 
+// Página de teste para o player
 app.get("/player", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "player.html"));
 });
 
+// 🔁 Proxy para streaming de vídeo HTTP
 app.get("/proxy", async (req, res) => {
   const targetUrl = req.query.url;
 
@@ -47,11 +50,11 @@ app.get("/proxy", async (req, res) => {
   }
 
   const headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
   };
 
   if (req.headers.range) {
-    headers["Range"] = req.headers.range;
+    headers["Range"] = req.headers.range; // Mantém o carregamento progressivo do vídeo
   }
 
   const client = targetUrl.startsWith("https") ? https : http;
@@ -85,14 +88,7 @@ app.get("/proxy", async (req, res) => {
   request.end();
 });
 
-axiosRetry(axios, {
-  retries: 10,
-  retryDelay: (retryCount) => Math.pow(2, retryCount) * 1000,
-  retryCondition: (error) => {
-    return error.response?.status >= 500 || error.code === "ECONNABORTED";
-  },
-});
-
+// 🔁 Proxy para HLS (M3U8)
 app.get("/hls-proxy", async (req, res) => {
   const videoUrl = req.query.url;
 
@@ -106,8 +102,7 @@ app.get("/hls-proxy", async (req, res) => {
     const response = await axios.get(videoUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
-        "Origin": "https://proxy-gold-pi.vercel.app",
-        "Referer": "https://proxy-gold-pi.vercel.app",
+        "Referer": videoUrl, // Pode ser necessário para evitar bloqueios
       },
       responseType: "stream",
     });
@@ -118,7 +113,6 @@ app.get("/hls-proxy", async (req, res) => {
       "Content-Type": response.headers["content-type"] || "application/vnd.apple.mpegurl",
     });
 
-    // Inicia o envio dos dados imediatamente para evitar timeout
     response.data.pipe(res);
 
   } catch (error) {
@@ -132,7 +126,7 @@ app.get("/hls-proxy", async (req, res) => {
   }
 });
 
-
+// 🚀 Inicia o servidor na porta definida ou na 3000
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Proxy rodando na porta ${PORT}`);
