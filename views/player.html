@@ -5,95 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Video.js Example</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
-    <style>
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        margin: 0;
-      }
-      .video-js {
-        width: 100%;
-        max-width: 800px;
-        min-height: 500px;
-      }
-      .back {
-        cursor: pointer;
-        padding: 10px;
-        background-color: #007bff;
-        color: white;
-        border-radius: 5px;
-        margin-bottom: 20px;
-      }
-      #loading {
-        display: none;
-        font-size: 1.5em;
-        color: #007bff;
-      }
-    </style>
+    <style></style>
   </head>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-js {
+      width: 100%;
+      min-height: 500px;
+    }
+  </style>
   <body>
-    <nav><div class="back" onclick="window.history.back()">Voltar</div></nav>
-    <div id="loading">Carregando vídeo...</div>
+    <nav><div class="back">Voltar</div></nav>
     <video
       id="my-video"
       class="video-js vjs-default-skin"
       controls
       preload="auto"
-    ></video>
+    >
+      <source id="video-source" src="" type="application/x-mpegURL" />
+      Your browser does not support the video tag.
+    </video>
 
     <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const urlParams = new URLSearchParams(window.location.search);
-        const streamingUrl = urlParams.get("url");
+      // Captura o valor da URL dos parâmetros da URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const streamingUrl = urlParams.get("url"); // Obtém o valor do parâmetro 'url'
+ 
+      // Verifica se a URL está presente
+      if (streamingUrl) {
+        // Substitui o 'src' da fonte do vídeo com a URL obtida
+        document.querySelector("#video-source").src = `/hls-proxy?url=${streamingUrl}`;
 
-        if (!streamingUrl) {
-          alert("Nenhuma URL fornecida.");
-          console.error("Nenhuma URL fornecida.");
-          return;
-        }
-
+        // Inicializa o player Video.js
         var player = videojs('my-video', {
-          techOrder: ['html5'],
-          hls: {
-            withCredentials: false,  // Para habilitar ou desabilitar cookies no HLS
-            enableLowLatency: true,   // Habilitar baixa latência (opcional)
-            maxRetry: 3,             // Número de tentativas de reconexão
-            retryDelay: 5000         // Intervalo entre as tentativas
-          }
-        });
-
-        // Define a fonte do vídeo
-       player.src({
-  src: `https://proxy-gold-pi.vercel.app/hls-proxy?url=${encodeURIComponent(streamingUrl)}`,
-  type: "application/x-mpegURL",
+  techOrder: ['html5'],
+  html5: {
+    hls: {
+      withCredentials: false, // Certifique-se de que está configurado corretamente
+    }
+  }
 });
 
-
-        player.on("error", function (e) {
-          console.error("Erro ao carregar o vídeo: ", e);
-          alert("Ocorreu um erro ao carregar o vídeo.");
-        });
-
-        player.on("waiting", function () {
-          document.getElementById("loading").style.display = "block";
-        });
-
-        player.on("play", function () {
-          document.getElementById("loading").style.display = "none";
+        player.on("error", function () {
+          console.error("Ocorreu um erro ao carregar o vídeo.");
         });
 
         player.on("loadedmetadata", function () {
           console.log("O vídeo está carregado e pronto para ser exibido.");
         });
 
-        player.on("canplay", function () {
+        player.on("readyforplay", function () {
           console.log("O vídeo está pronto para reprodução.");
         });
-      });
+      } else {
+        console.error("Nenhuma URL fornecida.");
+      }
     </script>
   </body>
 </html>
