@@ -40,7 +40,7 @@
       // Verifica se a URL está presente
       if (streamingUrl) {
         // Substitui o 'src' da fonte do vídeo com a URL obtida
-        document.querySelector("#video-source").src = `/hls-proxy?url=${streamingUrl}`;
+        document.querySelector("#video-source").src = `https://proxy-gold-pi.vercel.app/hls-proxy?url=http://levierdegard.store:8080/AN2233795/sO0HIhVEWd38KH6OQnh2J5JwgCt8JX/9053`;
 
         // Inicializa o player Video.js
         var player = videojs('my-video', {
